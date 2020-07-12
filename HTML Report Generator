@@ -1,0 +1,137 @@
+import org.apache.commons.io.FileUtils
+import java.io.IOException;
+//1. Create a "SoapUIResults" folder in the project path 
+      // Retrieve the project root folder
+      def projectPath = new com.eviware.soapui.support.GroovyUtils(context).projectPath
+      log.info(projectPath)
+      project_name = testRunner.testCase.testSuite.project.name
+      // Specify a folder inside project root to store the results
+      String folderPath = projectPath + "/"+project_name+"_SoapUIResults";
+      log.info(folderPath)
+      // Create a File object for the specified path
+      def resultFolder = new File(folderPath);
+      // Check for existence of folder and create a folder
+      if(!resultFolder.exists())
+      {
+        resultFolder.mkdirs();
+      }
+ //2. Create a subfolder (with timestamp) to store the request-response local copy 
+      // Retrieve the latest execution date-time
+      // Specify the subfolder path with name Request-Response_CurrentTimeStamp
+      String subfolderPath1 = folderPath+ "/Request-Response";
+      
+      // Create this sub-folder
+      new File(subfolderPath1).mkdirs();
+      context.testCase.testSuite.setPropertyValue("subfolderPath1",subfolderPath1)
+	 log.info(subfolderPath1)
+// 3. Create another subfolder "HTML Reports" to store the reports file 
+      // Specify the subfolder path with name CSV Reports
+      String subfolderPath2 = folderPath+ "/HTML Reports";
+      // Create this sub-folder
+      new File(subfolderPath2).mkdirs();
+      context.testCase.testSuite.setPropertyValue("subfolderPath2",subfolderPath2)
+ log.info(subfolderPath2)
+
+	  Date d = new Date();
+      def executionDate = d.format("dd-MMM-yyyy HH_mm");
+// 4. Create a Report.HTML file inside the HTML Reports folder 
+	def suite_name = context.testCase.testSuite.project.getPropertyValue("suite_name")
+      // Create a File object for Report csv file (with timestamp)
+      //def reportFile = new File(subfolderPath2,"Report_"+suite_name+".html");
+      def reportFile = new File(subfolderPath2,"Report"+suite_name+".html");
+       // Check for existence of report file and create a file
+      if(!reportFile.exists())
+      {
+        reportFile.createNewFile();
+        // Create required column names in the report file
+        reportFile.write("<html>" +
+           "<body>" +
+           "<h1>"+project_name+" API Suite Test Results</h1>"+
+           "<table border="+1+">" +
+           "<tr>" +
+           "<th>Test Suite </th>" +
+           "<th>Test Case </th>" +
+           "<th>Test Step </th>" +
+           "<th>Step Type </th>" +
+           "<th>Status </th>" +
+           "<th>Execution Date </th>" +
+           "</tr>");
+      }
+
+ // 5. Inserting data in the file
+      // Iterate over all the test steps results
+  for(stepResult in testRunner.getResults())
+  {
+    // Retrieve Test Suite name
+   def testSuite = testRunner.testCase.testSuite.name;
+   // Retrieve Test Case name
+   def testCase = testRunner.testCase.name;
+   // Retrieve Test Step
+   def testStep = stepResult.getTestStep();
+   // Retrieve Test Step name
+   def testStepName = testStep.name
+   // Retrieve Test Step type
+   def type = testStep.config.type
+   // Retrieve Test Step status
+   def status = stepResult.getStatus()
+   // Creating new line in report file
+   reportFile.append("<tr>"+
+   				 "<td>" + testSuite + "</td>"
+   				+"<td>" + testCase +  "</td>" 
+   				+"<td>" + testStepName + "</td>"
+   				+"<td>" + type + "</td>"
+   				+"<td>" + status + "</td>"
+   				+"<td>" + executionDate+ "</td>"
+   				+"</tr>");
+ 	
+ 	
+/* ------------------------------------------------------------------------------- */
+
+// 6. Extract the request and response and save it to external file
+
+      // Verify if the test step type is request: SOAP project or restrequest: REST project
+	try{
+        if((type=="request").or(type=="restrequest"))
+
+        {
+
+          // Extract the request from the test step
+
+          def extRequest = testStep.properties["Request"].value;    
+
+
+
+      // Create a file in the reports folder and write the request
+
+      // Naming convention: request_TestSuiteName_TestCaseName_TestStepName.txt
+
+      def requestFile=subfolderPath1+"/request_"+testSuite+"_"+testCase+"_"+testStepName+".txt";
+
+      def rqfile = new File(requestFile);
+
+      rqfile.write(extRequest, "UTF-8");
+
+
+
+      // Extract the response from the test step
+
+      def extResponse = stepResult.getResponseContent();    
+
+
+
+      // Create a file in the reports folder and write the response
+
+      // Naming convention: response_TestSuiteName_TestCaseName_TestStepName.txt
+
+      def responseFile=subfolderPath1+"/response_"+testSuite+"_"+testCase+"_"+testStepName+".txt";
+
+      def rsfile = new File(responseFile);
+
+      rsfile.write(extResponse, "UTF-8");
+
+     }
+	 } catch(Exception e){
+		log.info(e.getMessage())
+	 }
+}
+reportFile= null
