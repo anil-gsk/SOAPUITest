@@ -1,0 +1,13 @@
+//Delete HTML Reports
+import org.apache.commons.io.FileUtils
+//Set subfolderPath1 value from HTML reports before you get
+htmlreports = context.testCase.testSuite.getPropertyValue("subfolderPath1")
+File folder1 = new File(htmlreports)
+FileUtils.cleanDirectory(folder1)
+
+//Delete Request-Response Reports
+import org.apache.commons.io.FileUtils
+//Set subfolderPath1 value from HTML reports before you get
+request_response = context.testCase.testSuite.getPropertyValue("subfolderPath2")
+File folder2 = new File(request_response)
+FileUtils.cleanDirectory(folder2)
